@@ -86,7 +86,7 @@ for size in ["small","medium","large"]:
     asteroid_explosion[size] = pg.image.load(os.path.join(img_dir, "explosions", "asteroid_explosion_{}.png".format(size))).convert_alpha()
     asteroid_explosion_ex[size] = pg.image.load(os.path.join(img_dir, "explosions", "asteroid_explosion_e_{}.png".format(size))).convert_alpha()
 asteroid_explosive_ss = {True:asteroid_explosion_ex, False:asteroid_explosion}
-
+player_damage = pg.image.load(os.path.join(img_dir, "player_explosion", "damage.png")).convert_alpha()
 player_explosion = {}
 for i in range(1,18):
     player_explosion[i] = pg.image.load(os.path.join(img_dir, "player_explosion", "{}.png".format(i))).convert()
@@ -161,7 +161,38 @@ def draw_lives(surf, x, y, lives, img):
         img_rect.y = y
         surf.blit(img, img_rect)
 
-def game_over_screen():
+#GAME DISPLAYS
+def display_game_menu_screen():
+    pilot = "Oscar"
+    menu = True
+    while menu:
+        start_button = pg.rect.Rect(150,795,200,75)
+        choose_pilot_button = pg.rect.Rect(500,795,200,75)
+        controls_button = pg.rect.Rect(850,795,200,75)
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+            if event.type == MOUSEBUTTONDOWN:
+                mouse_pos = event.pos
+                if start_button.collidepoint(mouse_pos):
+                    return pilot
+                elif choose_pilot_button.collidepoint(mouse_pos):
+                    pilot = display_choose_pilot_screen()
+                elif controls_button.collidepoint(mouse_pos):
+                    display_contols_screen()
+                    
+        screen.fill(black)
+        draw_text(screen, "TFSpace","NeuePixelSans.ttf", 150, width/2 - 26, 25, colour=dark_grey)
+        draw_text(screen, "TFSpace","NeuePixelSans.ttf", 150, width/2 - 23, 25, colour=grey)
+        draw_text(screen, "TFSpace","NeuePixelSans.ttf", 150, width/2 - 20, 25)
+        screen.blit(stars, stars_rect)
+        draw_button(screen, start_button, text="Start",font="NeuePixelSans.ttf")
+        draw_button(screen, choose_pilot_button, text="Pilot",font="NeuePixelSans.ttf")    
+        draw_button(screen, controls_button, text="Controls",font="NeuePixelSans.ttf")
+        screen.blit(menu_nebula, (100,190))
+        pg.display.flip()   
+
+def display_game_over_screen():
     """
     displays game over screen and reinitialise on RETURN keyup event
     """
@@ -188,7 +219,7 @@ def game_over_screen():
                     menu = True
                     return True, False
 
-def choose_pilot_screen():
+def display_choose_pilot_screen():
     """
     displays screen where user can select a pilot to play as
     """
@@ -238,7 +269,7 @@ def choose_pilot_screen():
             pg.draw.rect(screen, dark_grey, sprite.rect, 2)
         pg.display.flip()
 
-def controls_screen():
+def display_contols_screen():
     waiting = True
     while waiting:
         clock.tick(fps)
@@ -249,9 +280,9 @@ def controls_screen():
                 if event.key == K_ESCAPE:
                     waiting = False
         screen.fill(black)
-        draw_text(screen, "Controls", "NeuePixelSans.ttf", 90, width/2 - 6, 100, colour=dark_grey)
-        draw_text(screen, "Controls", "NeuePixelSans.ttf", 90, width/2 - 3, 100, colour=grey)
-        draw_text(screen, "Controls", "NeuePixelSans.ttf", 90, width/2, 100)
+        draw_text(screen, "Controls", "NeuePixelSans.ttf", 90, width/2 - 6, 75, colour=dark_grey)
+        draw_text(screen, "Controls", "NeuePixelSans.ttf", 90, width/2 - 3, 75, colour=grey)
+        draw_text(screen, "Controls", "NeuePixelSans.ttf", 90, width/2, 75)
         screen.blit(controls["up"], (220,220))
         screen.blit(controls["left"], (100,335))
         screen.blit(controls["down"], (220,335))
@@ -269,6 +300,167 @@ def controls_screen():
         draw_text(screen, "(Press Esc to Return to Menu)", "NeuePixelSans.ttf", 70, width/2 - 3, 800, colour=grey)
         draw_text(screen, "(Press Esc to Return to Menu)", "NeuePixelSans.ttf", 70, width/2, 800)
         pg.display.flip()
+
+def display_level_one_intro(pilot):
+    counter = 0
+    start_time = pg.time.get_ticks()
+    intro = True
+    warp = Warp()
+    all_sprites.add(warp)
+    for i in range(20):
+        meteor = Meteor(5,2)
+        all_sprites.add(meteor)
+        meteors.add(meteor)
+    while intro:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+        screen.fill(black)
+        screen.blit(stars,(0,0))
+        for meteor in meteors:
+            if meteor.rect.y > height/2 -200:
+                meteor.kill()
+                explosion = MeteorExplosion(meteor)
+                all_sprites.add(explosion)
+        draw_text(screen, "LEVEL ONE", "PXFXshadow-3.ttf", 75, width/2, height/2)
+        all_sprites.update()
+        all_sprites.draw(screen)
+        pg.display.flip()
+        if counter == 4:
+            player = Player(pilot)
+            all_sprites.add(player)
+        if pg.time.get_ticks() - start_time >= 7050:
+            return player
+        counter += 1 
+
+def display_level_one(player):
+    re_init = False
+    level_one = True
+    x,y = (0,0)
+    x1,y1 = (0, -stars_rect.height)
+    nebulae_timer = pg.time.get_ticks()
+    spawn_l1_mob(9)
+    while level_one:
+        clock.tick(fps)
+        if re_init:
+            warp = Warp()
+            all_sprites.add(warp)
+            if re_init_counter == 3:
+                player = Player(pilot)
+                all_sprites.add(player)
+                re_init = False
+
+        asteroid = None
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+            if event.type == pg.KEYDOWN:
+                pass
+
+        #CHECKS WHETHER BULLET HITS MOB SPRITE
+        hits = pg.sprite.groupcollide(mobs, player_bullets, True, True, pg.sprite.collide_circle)
+        for hit in hits:
+            player.score += 10
+            random.choice(enemy_explosion_wavs).play()
+            explosion = EnemyExplosion(hit)
+            all_sprites.add(explosion)
+            if np.random.choice([True,False], p=[0.08, 0.92]):
+                powerup = Powerup(hit.rect.center)
+                powerups.add(powerup)
+                all_sprites.add(powerup)
+            spawn_l1_mob(1)
+
+        #CHECKS WHETHER EXPLOSION HITS MOB SPRITE
+        hits = pg.sprite.groupcollide(mobs, explosions, True, True, pg.sprite.collide_circle)
+        for hit in hits:
+            random.choice(enemy_explosion_wavs).play()
+            explosion = EnemyExplosion(hit)
+            all_sprites.add(explosion)
+            spawn_l1_mob(1)
+        
+        #CHECKS WHETHER BULLET HITS METEOR SPRITE
+        hits = pg.sprite.groupcollide(meteors, bullets, True, True)
+        if hits:
+            for key in hits.keys():
+                explosion = MeteorExplosion(key)
+                all_sprites.add(explosion)
+                explosions.add(explosion)
+
+        #CHECKS WHETHER MOB HITS PLAYER
+        hits = pg.sprite.spritecollide(player, mobs, True)
+        if hits:
+            player.shield -= 25
+        for key in hits:
+            explosion  = EnemyExplosion(key)
+            all_sprites.add(explosion)
+
+        #CHECKS WHETHER METEOR HITS PLAYER
+        hits = pg.sprite.spritecollide(player, meteors, True)
+        if hits:
+            player.shield -= 25
+
+        #CHECKS WHETHER MOB BULLET HITS PLAYER
+        hits = pg.sprite.spritecollide(player, mob_bullets, True)
+        if hits:
+            player.shield -= 25
+            print(hits)
+            print(type(hits[0]))
+        for hit in hits:
+            damage = PlayerDamageExplosion(hit)
+            all_sprites.add(damage)
+
+        #CHECKS WHETHER POWERUP HITS PLAYER
+        hits = pg.sprite.spritecollide(player, powerups, True)
+        for hit in hits:
+            player.powerup(hit)
+
+        # GENERATES METEORS
+        if random.choice([False] * 100 + [True]):
+            meteor = Meteor(5, 2)
+            all_sprites.add(meteor)
+            meteors.add(meteor)
+
+        #PLAYER HEALTH CHECKER
+        if player.shield <= 0:
+            dead_sound.play()
+            player_explode = PlayerExplosion(player)
+            all_sprites.add(player_explode)
+            player.hide()
+            player.lives -= 1
+            player.shield = 100
+        
+        nebulas.update()
+        all_sprites.update()
+
+        #DRAW PART OF GAMELOOP
+        screen.fill(black)
+        if pg.time.get_ticks() - nebulae_timer > 15000:
+            nebula = Nebula()
+            all_sprites.add(nebula)
+            nebulae_timer = pg.time.get_ticks()
+        if y > stars_rect.height:
+            y = -stars_rect.height
+        if y1 > stars_rect.height:
+            y1 = -stars_rect.height
+        screen.blit(stars,(x,y))
+        screen.blit(stars_copy,(x1,y1))
+        y += 8
+        y1 += 8
+        if stars_rect.bottom > height:
+            stars_rect.bottom = 0
+        draw_text(screen, "SCORE: {}".format(str(player.score)),"NeuePixelSans.ttf", 28, width - 100, height - 100)
+        draw_text(screen, "PILOT: {}".format(str(pilot)),"NeuePixelSans.ttf", 28, width - 100, 10)
+        draw_shield_bar(screen, 10, 10, player.shield)
+        draw_lives(screen, 120, 10, player.lives, player_lives_imgs[pilot ])
+        nebulas.draw(screen)
+        all_sprites.draw(screen)
+        pg.display.flip()
+
+        #if player died and resulting explosion finished
+        if player.lives == 0:
+            if not player_explode.alive():
+                menu, level_one = display_game_over_screen()
+
 
 class Player(pg.sprite.Sprite):
     def __init__(self, pilot):
@@ -579,6 +771,43 @@ class PlayerExplosion(pg.sprite.Sprite):
             else:
                 self.counter += 1
 
+class PlayerDamageExplosion(pg.sprite.Sprite):
+    def __init__(self,hit):
+        super().__init__()
+        self.ssheet = player_damage
+        self.cols = 8
+        self.rows = 8
+        self.total_cell_count = self.cols * self.rows
+        self.ssheet_rect = self.ssheet.get_rect()
+        w = self.cell_width = self.ssheet_rect.width / self.cols
+        h =self.cell_height = self.ssheet_rect.height / self.rows
+        hw, hh = self.cell_centre = (self.cell_width/2, self.cell_height/2)
+        self.cells = [(i%self.cols*w, i//self.cols*h, w, h) for i in range(self.total_cell_count)]
+        self.selection = [i for i in range(64)]
+        self.surf = pg.Surface((self.cell_width, self.cell_height))
+        self.surf.blit(self.ssheet, (self.ssheet_rect.x , self.ssheet_rect.y), self.cells[self.selection[0]])
+        self.image = self.surf
+        self.rect = self.image.get_rect()
+        self.rect.centerx = hit.rect.centerx
+        self.rect.centery = hit.rect.centery + 25
+        self.counter = 1
+        self.last_update = pg.time.get_ticks()
+
+    def update(self):
+        now = pg.time.get_ticks()
+        time_diff = now - self.last_update
+        if time_diff >= 25:
+            self.surf.fill(black)
+            self.surf.blit(self.ssheet, (self.ssheet_rect.x , self.ssheet_rect.y), self.cells[self.selection[self.counter]])
+            self.image = self.surf
+            self.image.set_colorkey(black)
+            if (self.counter == 63):
+                self.counter = 0
+                self.kill()
+            else:
+                self.counter += 1
+            self.last_update = pg.time.get_ticks() 
+
 class Warp(pg.sprite.Sprite):
     def __init__(self):
         pg.sprite.Sprite.__init__(self)
@@ -708,12 +937,12 @@ class LeftMissile(pg.sprite.Sprite):
         if self.counter == 0:
             self.target = self.acquire_target()
         if self.target:
-            # find normalized direction vector (dx, dy) between enemy and player
+            # find direction vector (dx, dy) between enemy and player
             dx, dy = self.rect.x - self.target.rect.x, self.rect.y - self.target.rect.y
             if dy and dx:
                 dist = math.hypot(dx, dy)
                 dx, dy = dx / dist, dy / dist
-                # move along this normalized vector towards the player at current speed
+                # move along this normalized vector towards the player at self.speed
                 self.rect.x += dx * self.speed
                 self.rect.y += dy * self.speed
                 # rotate image to angle of trajectory
@@ -818,205 +1047,21 @@ all_groups = [
               explosions, nebulas, powerups 
               ]
 
-pilot = "Oscar"
-
 active = True
-menu = True
 
 while active:
     #GAME MENU
-    while menu:
-        start_button = pg.rect.Rect(150,795,200,75)
-        choose_pilot_button = pg.rect.Rect(500,795,200,75)
-        controls_button = pg.rect.Rect(850,795,200,75)
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-            if event.type == MOUSEBUTTONDOWN:
-                mouse_pos = event.pos
-                if start_button.collidepoint(mouse_pos):
-                    menu = False
-                elif choose_pilot_button.collidepoint(mouse_pos):
-                    pilot = choose_pilot_screen()
-                elif controls_button.collidepoint(mouse_pos):
-                    controls_screen()
-                    
-        screen.fill(black)
-        draw_text(screen, "TFSpace","NeuePixelSans.ttf", 150, width/2 - 26, 25, colour=dark_grey)
-        draw_text(screen, "TFSpace","NeuePixelSans.ttf", 150, width/2 - 23, 25, colour=grey)
-        draw_text(screen, "TFSpace","NeuePixelSans.ttf", 150, width/2 - 20, 25)
-        screen.blit(stars, stars_rect)
-        draw_button(screen, start_button, text="Start",font="NeuePixelSans.ttf")
-        draw_button(screen, choose_pilot_button, text="Pilot",font="NeuePixelSans.ttf")    
-        draw_button(screen, controls_button, text="Controls",font="NeuePixelSans.ttf")
-        screen.blit(menu_nebula, (100,190))
-        pg.display.flip()
+    pilot = display_game_menu_screen()
 
-
-    #player = Player()
-    warp = Warp()
-    all_sprites.add(warp)
-
-    x,y = (0,0)
-    x1,y1 = (0, -stars_rect.height)
-
-    intro = True
-    start_time = pg.time.get_ticks()
     #Play background music
     pg.mixer.music.play(loops=-1)
 
-    for i in range(20):
-        meteor = Meteor(5,2)
-        all_sprites.add(meteor)
-        meteors.add(meteor)
+    #LEVEL_ONE INTRO
+    player = display_level_one_intro(pilot)
 
-    counter = 0
-    #INTRO
-    while intro:
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-        screen.fill(black)
-        screen.blit(stars,(x,y))
-        for meteor in meteors:
-            if meteor.rect.y > height/2 -200:
-                meteor.kill()
-                explosion = MeteorExplosion(meteor)
-                all_sprites.add(explosion)
-        draw_text(screen, "LEVEL ONE", "PXFXshadow-3.ttf", 75, width/2, height/2)
-        all_sprites.update()
-        all_sprites.draw(screen)
-        pg.display.flip()
-        if counter == 4:
-            player = Player(pilot)
-            all_sprites.add(player)
-        if pg.time.get_ticks() - start_time >= 7050:
-            intro = False
-            running = True
-        counter += 1 
-
-    #spawn mobs
-    spawn_l1_mob(9)
-    re_init = False
-    running=True
-    #MAIN GAME LOOP
-    nebulae_timer = pg.time.get_ticks()
-    while running:
-        clock.tick(fps)
-        if re_init:
-            warp = Warp()
-            all_sprites.add(warp)
-            if re_init_counter == 3:
-                player = Player(pilot)
-                all_sprites.add(player)
-                re_init = False
-
-        asteroid = None
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-            if event.type == pg.KEYDOWN:
-                pass
-
-        #CHECKS WHETHER BULLET HITS MOB SPRITE
-        hits = pg.sprite.groupcollide(mobs, player_bullets, True, True, pg.sprite.collide_circle)
-        for hit in hits:
-            player.score += 10
-            random.choice(enemy_explosion_wavs).play()
-            explosion = EnemyExplosion(hit)
-            all_sprites.add(explosion)
-            if np.random.choice([True,False], p=[0.08, 0.92]):
-                powerup = Powerup(hit.rect.center)
-                powerups.add(powerup)
-                all_sprites.add(powerup)
-            spawn_l1_mob(1)
-
-        #CHECKS WHETHER EXPLOSION HITS MOB SPRITE
-        hits = pg.sprite.groupcollide(mobs, explosions, True, True, pg.sprite.collide_circle)
-        for hit in hits:
-            random.choice(enemy_explosion_wavs).play()
-            explosion = EnemyExplosion(hit)
-            all_sprites.add(explosion)
-            spawn_l1_mob(1)
-        
-        #CHECKS WHETHER BULLET HITS METEOR SPRITE
-        hits = pg.sprite.groupcollide(meteors, bullets, True, True)
-        if hits:
-            for key in hits.keys():
-                explosion = MeteorExplosion(key)
-                all_sprites.add(explosion)
-                explosions.add(explosion)
-
-        #CHECKS WHETHER MOB HITS PLAYER
-        hits = pg.sprite.spritecollide(player, mobs, True)
-        if hits:
-            player.shield -= 25
-        for key in hits:
-            explosion  = EnemyExplosion(key)
-            all_sprites.add(explosion)
-
-        #CHECKS WHETHER METEOR HITS PLAYER
-        hits = pg.sprite.spritecollide(player, meteors, True)
-        if hits:
-            player.shield -= 25
-
-        #CHECKS WHETHER MOB BULLET HITS PLAYER
-        hits = pg.sprite.spritecollide(player, mob_bullets, True)
-        if hits:
-            player.shield -= 25
-
-        #CHECKS WHETHER POWERUP HITS PLAYER
-        hits = pg.sprite.spritecollide(player, powerups, True)
-        for hit in hits:
-            player.powerup(hit)
-
-        # GENERATES METEORS
-        if random.choice([False] * 100 + [True]):
-            meteor = Meteor(5, 2)
-            all_sprites.add(meteor)
-            meteors.add(meteor)
-
-        #PLAYER HEALTH CHECKER
-        if player.shield <= 0:
-            dead_sound.play()
-            player_explode = PlayerExplosion(player)
-            all_sprites.add(player_explode)
-            player.hide()
-            player.lives -= 1
-            player.shield = 100
-        
-        nebulas.update()
-        all_sprites.update()
-
-        #DRAW PART OF GAMELOOP
-        screen.fill(black)
-        if pg.time.get_ticks() - nebulae_timer > 15000:
-            nebula = Nebula()
-            all_sprites.add(nebula)
-            nebulae_timer = pg.time.get_ticks()
-        if y > stars_rect.height:
-            y = -stars_rect.height
-        if y1 > stars_rect.height:
-            y1 = -stars_rect.height
-        screen.blit(stars,(x,y))
-        screen.blit(stars_copy,(x1,y1))
-        y += 8
-        y1 += 8
-        if stars_rect.bottom > height:
-            stars_rect.bottom = 0
-        draw_text(screen, "SCORE: {}".format(str(player.score)),"NeuePixelSans.ttf", 28, width - 100, height - 100)
-        draw_text(screen, "PILOT: {}".format(str(pilot)),"NeuePixelSans.ttf", 28, width - 100, 10)
-        draw_shield_bar(screen, 10, 10, player.shield)
-        draw_lives(screen, 120, 10, player.lives, player_lives_imgs[pilot ])
-        nebulas.draw(screen)
-        all_sprites.draw(screen)
-        pg.display.flip()
-
-        #if player died and resulting explosion finished
-        if player.lives == 0:
-            if not player_explode.alive():
-                menu, running = game_over_screen()
-        
+    #LEVEL_ONE
+    display_level_one(player)
+ 
 pg.quit()
 
 
