@@ -208,7 +208,7 @@ def collisions_checker():
     if hits:
         player.shield -= 25
     for hit in hits:
-        damage = PlayerDamageExplosion(hit)
+        damage = PlayerDamageExplosion(hit, player)
         all_sprites.add(damage)
 
     #CHECKS WHETHER POWERUP HITS PLAYER
@@ -419,6 +419,8 @@ def display_level_one(player):
             if event.type == pg.KEYDOWN:
                 pass
 
+        collisions_checker()
+
         #CHECKS WHETHER BULLET HITS MOB SPRITE
         hits = pg.sprite.groupcollide(mobs, player_bullets, True, True, pg.sprite.collide_circle)
         for hit in hits:
@@ -496,7 +498,7 @@ def display_level_one_boss(player):
         hits = pg.sprite.spritecollide(player, mobs, False)
         if hits:
             player.shield -= 25
-            damage = PlayerDamageExplosion(hit)
+            damage = PlayerDamageExplosion(hit, player)
             all_sprites.add(damage)
 
         #CHECKS WHETHER MOB BULLET HITS PLAYER
@@ -504,7 +506,7 @@ def display_level_one_boss(player):
         if hits:
             player.shield -= 5
         for hit in hits:
-            damage = PlayerDamageExplosion(hit)
+            damage = PlayerDamageExplosion(hit, player)
             all_sprites.add(damage)
 
         #CHECKS WHETHER BOMB EXPLOSIONS HITS PLAYER
@@ -856,8 +858,9 @@ class PlayerExplosion(pg.sprite.Sprite):
                 self.counter += 1
 
 class PlayerDamageExplosion(pg.sprite.Sprite):
-    def __init__(self,hit):
+    def __init__(self,hit, player):
         super().__init__()
+        self.player = player
         self.ssheet = player_damage
         self.cols = 8
         self.rows = 8
@@ -871,21 +874,24 @@ class PlayerDamageExplosion(pg.sprite.Sprite):
         self.surf = pg.Surface((self.cell_width, self.cell_height))
         self.surf.blit(self.ssheet, (self.ssheet_rect.x , self.ssheet_rect.y), self.cells[self.selection[0]])
         self.image = self.surf
-        self.image.set_colorkey(black)
+        self.dist = hit.rect.centerx - player.rect.centerx
         self.rect = self.image.get_rect()
-        self.rect.centerx = hit.rect.centerx
-        self.rect.centery = hit.rect.centery + 25
+        self.rect.centerx = player.rect.centerx + self.dist
+        self.rect.centery = player.rect.top
         self.counter = 1
         self.last_update = pg.time.get_ticks()
 
     def update(self):
         now = pg.time.get_ticks()
         time_diff = now - self.last_update
-        if time_diff >= 25:
+        if time_diff >= 0:
             self.surf.fill(black)
             self.surf.blit(self.ssheet, (self.ssheet_rect.x , self.ssheet_rect.y), self.cells[self.selection[self.counter]])
             self.image = self.surf
             self.image.set_colorkey(black)
+            self.rect = self.image.get_rect()
+            self.rect.centerx = self.player.rect.centerx + self.dist
+            self.rect.centery = self.player.rect.top
             if (self.counter == 63):
                 self.counter = 0
                 self.kill()
