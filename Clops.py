@@ -58,6 +58,7 @@ alien_scout = pg.image.load(os.path.join(img_dir, "enemies", "Alien-Scout.png"))
 alien_cruiser = pg.image.load(os.path.join(img_dir, "enemies", "Alien-Cruiser.png")).convert_alpha()
 alien_bomber = pg.image.load(os.path.join(img_dir, "enemies", "Alien-Bomber.png")).convert_alpha()
 level_1_aliens = [alien_scout,alien_cruiser,alien_bomber]
+level_one_boss_img = pg.image.load(os.path.join(img_dir, "enemies", "robo_clops.png")).convert_alpha()
 
 #asteroids
 asteroids_large = pg.image.load(os.path.join(img_dir, "asteroids", "asteroids_large.png")).convert_alpha()
@@ -77,6 +78,7 @@ for i in range(1,4):
 #fx
 warp_ss = pg.image.load(os.path.join(img_dir, "FX", "warp_effect.png")).convert_alpha()
 player_missile = pg.image.load(os.path.join(img_dir, "FX", "Human-Missile.png")).convert_alpha()
+bomb_img = pg.image.load(os.path.join(img_dir, "FX", "missile01.png")).convert_alpha()
 
 #explosions
 l1_enemy_explosion = pg.image.load(os.path.join(img_dir, "explosions", "enemy_explosion.png")).convert_alpha()
@@ -91,6 +93,10 @@ player_explosion = {}
 for i in range(1,18):
     player_explosion[i] = pg.image.load(os.path.join(img_dir, "player_explosion", "{}.png".format(i))).convert()
 
+redbomb_imgs = {}
+for i in range(1,19):
+    redbomb_imgs[i] = pg.image.load(os.path.join(img_dir, "explosions", 
+                                                 "redbomb", "{}.png".format(i))).convert()
 #powerups
 powerup_imgs = {}
 powerup_names = ['repair', 'coin', 'life', 'rapid_fire', 'missile']
@@ -160,6 +166,55 @@ def draw_lives(surf, x, y, lives, img):
         img_rect.x = x + 40 * i
         img_rect.y = y
         surf.blit(img, img_rect)
+
+def draw_all_normal_game_stats():
+    draw_text(screen, "SCORE: {}".format(str(player.score)),"NeuePixelSans.ttf", 28, width - 100, height - 100)
+    draw_text(screen, "PILOT: {}".format(str(player.pilot)),"NeuePixelSans.ttf", 28, width - 100, 10)
+    draw_shield_bar(screen, 10, 10, player.shield)
+    draw_lives(screen, 120, 10, player.lives, player_lives_imgs[pilot ])
+
+def collisions_checker():
+    #CHECKS WHETHER EXPLOSION HITS MOB SPRITE
+    hits = pg.sprite.groupcollide(mobs, explosions, True, True, pg.sprite.collide_circle)
+    for hit in hits:
+        random.choice(enemy_explosion_wavs).play()
+        explosion = EnemyExplosion(hit)
+        all_sprites.add(explosion)
+        spawn_l1_mob(1)
+    
+    #CHECKS WHETHER BULLET HITS METEOR SPRITE
+    hits = pg.sprite.groupcollide(meteors, bullets, True, True)
+    if hits:
+        for key in hits.keys():
+            explosion = MeteorExplosion(key)
+            all_sprites.add(explosion)
+            explosions.add(explosion)
+
+    #CHECKS WHETHER MOB HITS PLAYER
+    hits = pg.sprite.spritecollide(player, mobs, True)
+    if hits:
+        player.shield -= 25
+    for key in hits:
+        explosion = EnemyExplosion(key)
+        all_sprites.add(explosion)
+
+    #CHECKS WHETHER METEOR HITS PLAYER
+    hits = pg.sprite.spritecollide(player, meteors, True)
+    if hits:
+        player.shield -= 25
+
+    #CHECKS WHETHER MOB BULLET HITS PLAYER
+    hits = pg.sprite.spritecollide(player, mob_bullets, True)
+    if hits:
+        player.shield -= 25
+    for hit in hits:
+        damage = PlayerDamageExplosion(hit)
+        all_sprites.add(damage)
+
+    #CHECKS WHETHER POWERUP HITS PLAYER
+    hits = pg.sprite.spritecollide(player, powerups, True)
+    for hit in hits:
+        player.powerup(hit)
 
 #GAME DISPLAYS
 def display_game_menu_screen():
@@ -350,12 +405,13 @@ def display_level_one(player):
                 all_sprites.add(player)
                 re_init = False
 
-        asteroid = None
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
             if event.type == pg.KEYDOWN:
                 pass
+
+        collisions_checker()
 
         #CHECKS WHETHER BULLET HITS MOB SPRITE
         hits = pg.sprite.groupcollide(mobs, player_bullets, True, True, pg.sprite.collide_circle)
@@ -368,54 +424,10 @@ def display_level_one(player):
                 powerup = Powerup(hit.rect.center)
                 powerups.add(powerup)
                 all_sprites.add(powerup)
-            spawn_l1_mob(1)
-
-        #CHECKS WHETHER EXPLOSION HITS MOB SPRITE
-        hits = pg.sprite.groupcollide(mobs, explosions, True, True, pg.sprite.collide_circle)
-        for hit in hits:
-            random.choice(enemy_explosion_wavs).play()
-            explosion = EnemyExplosion(hit)
-            all_sprites.add(explosion)
-            spawn_l1_mob(1)
-        
-        #CHECKS WHETHER BULLET HITS METEOR SPRITE
-        hits = pg.sprite.groupcollide(meteors, bullets, True, True)
-        if hits:
-            for key in hits.keys():
-                explosion = MeteorExplosion(key)
-                all_sprites.add(explosion)
-                explosions.add(explosion)
-
-        #CHECKS WHETHER MOB HITS PLAYER
-        hits = pg.sprite.spritecollide(player, mobs, True)
-        if hits:
-            player.shield -= 25
-        for key in hits:
-            explosion  = EnemyExplosion(key)
-            all_sprites.add(explosion)
-
-        #CHECKS WHETHER METEOR HITS PLAYER
-        hits = pg.sprite.spritecollide(player, meteors, True)
-        if hits:
-            player.shield -= 25
-
-        #CHECKS WHETHER MOB BULLET HITS PLAYER
-        hits = pg.sprite.spritecollide(player, mob_bullets, True)
-        if hits:
-            player.shield -= 25
-            print(hits)
-            print(type(hits[0]))
-        for hit in hits:
-            damage = PlayerDamageExplosion(hit)
-            all_sprites.add(damage)
-
-        #CHECKS WHETHER POWERUP HITS PLAYER
-        hits = pg.sprite.spritecollide(player, powerups, True)
-        for hit in hits:
-            player.powerup(hit)
+            spawn_l1_mob(1)        
 
         # GENERATES METEORS
-        if random.choice([False] * 100 + [True]):
+        if random.choice([False] * 50 + [True]):
             meteor = Meteor(5, 2)
             all_sprites.add(meteor)
             meteors.add(meteor)
@@ -448,10 +460,7 @@ def display_level_one(player):
         y1 += 8
         if stars_rect.bottom > height:
             stars_rect.bottom = 0
-        draw_text(screen, "SCORE: {}".format(str(player.score)),"NeuePixelSans.ttf", 28, width - 100, height - 100)
-        draw_text(screen, "PILOT: {}".format(str(pilot)),"NeuePixelSans.ttf", 28, width - 100, 10)
-        draw_shield_bar(screen, 10, 10, player.shield)
-        draw_lives(screen, 120, 10, player.lives, player_lives_imgs[pilot ])
+        draw_all_normal_game_stats()
         nebulas.draw(screen)
         all_sprites.draw(screen)
         pg.display.flip()
@@ -461,6 +470,41 @@ def display_level_one(player):
             if not player_explode.alive():
                 menu, level_one = display_game_over_screen()
 
+        #if player achieves 1000 score points summon boss
+        if player.score >= 10:
+            return player 
+
+def display_level_one_boss(player):
+    for mob in mobs:
+        mob.kill()
+    boss = LevelOneBoss()
+    mobs.add(boss)
+    all_sprites.add(boss)
+    boss_active = True
+    while boss_active:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+        collisions_checker()
+        #BULLETS COLLIDING WITH BOSS
+        hits = pg.sprite.spritecollide(boss, bullets, True)
+        for hit in hits:
+            if type(hit) == Bullet:
+                boss.shield -= 3
+            if type(hit) == Missile:
+                boss.shield -= 15
+
+        all_sprites.update()
+        
+        screen.fill(black)
+        screen.blit(stars,(0,0))
+        pg.draw.rect(screen, white, boss.rect, 4)
+        draw_all_normal_game_stats()
+        draw_shield_bar(screen, boss.rect.centerx, boss.rect.centery + 125, boss.shield)
+        all_sprites.draw(screen)
+        pg.display.flip()
+
+#CLASSES
 
 class Player(pg.sprite.Sprite):
     def __init__(self, pilot):
@@ -512,11 +556,11 @@ class Player(pg.sprite.Sprite):
         now = pg.time.get_ticks()
         if (now - self.last_shot >= self.shoot_delay) and self.missiles > 0:
             self.last_shot = now
-            lmissile = LeftMissile(player)
+            lmissile = Missile(self.rect, "left")
             all_sprites.add(lmissile)
             player_bullets.add(lmissile)
             bullets.add(lmissile)
-            rmissile = RightMissile(player)
+            rmissile = Missile(self.rect, "right")
             all_sprites.add(rmissile)
             player_bullets.add(rmissile)
             bullets.add(rmissile)
@@ -787,6 +831,7 @@ class PlayerDamageExplosion(pg.sprite.Sprite):
         self.surf = pg.Surface((self.cell_width, self.cell_height))
         self.surf.blit(self.ssheet, (self.ssheet_rect.x , self.ssheet_rect.y), self.cells[self.selection[0]])
         self.image = self.surf
+        self.image.set_colorkey(black)
         self.rect = self.image.get_rect()
         self.rect.centerx = hit.rect.centerx
         self.rect.centery = hit.rect.centery + 25
@@ -876,6 +921,116 @@ class LevelOneMob(pg.sprite.Sprite):
         bullets.add(bullet)
         enemy_shoot_sound.play()
 
+class LevelOneBoss(pg.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image_orig = level_one_boss_img
+        self.image = level_one_boss_img
+        self.rect = self.image.get_rect()
+        self.rect.center = (width/2, -75)
+        self.shield = 100
+        self.speed = 20
+        self.speedx = 15
+        self.speedy = 4
+        self.direction = "left"
+        self.target = None
+        self.returning = False
+        self.last_shot  = pg.time.get_ticks()
+        self.shoot_delay = 400
+        self.bomb_delay = 700
+    
+    def shoot(self):
+        now = pg.time.get_ticks()
+        if now - self.last_shot >= self.shoot_delay:
+            self.last_shot = now
+            bullet = Bullet(self.rect.centerx,self.rect.bottom, enemy=True)
+            all_sprites.add(bullet)
+            mob_bullets.add(bullet)
+            enemy_shoot_sound.play()
+    
+    def side_to_side_movement(self):
+        if self.direction == "left":
+            if self.rect.left > 0:
+                self.rect.x -= self.speedx
+            else:
+                self.rect.left = 0
+                self.direction = "right"
+        elif self.direction == "right":
+            if self.rect.right < width:
+                self.rect.x += self.speedx
+            else:
+                self.rect.right = width
+                self.direction = "left"
+
+    def bomb(self):
+        now = pg.time.get_ticks()
+        if now - self.last_shot >= self.bomb_delay:
+            self.last_shot = now
+            bomba = Bomb(self, player)
+            all_sprites.add(bomba)
+
+    def update(self):
+        if self.shield > 50:
+            if self.rect.y < 100:
+                self.rect.y += self.speedy
+            else:
+                self.side_to_side_movement()
+            self.shoot()
+        elif 25 < self.shield <= 50:
+            self.speedy = 15
+            if not self.target:
+                self.target = (player.rect.centerx, player.rect.bottom)
+                print("target acquired: ({},{})".format(self.target[0],self.target[1]))
+            #self.returning true when boss is retreating from attempted ram
+            if not self.returning:
+                # find direction vector (dx, dy) between enemy and player
+                if self.rect.x > self.target[0]:
+                    dx = self.rect.x - self.target[0]
+                    dy = self.target[1] - self.rect.y
+                elif self.rect.x < self.target[0]:
+                    dx = self.target[0] - self.rect.x
+                    dy = self.target[1] - self.rect.y
+                else:
+                    dx = 0
+                    #value of dy unimportant
+                    dy = 0 
+                if dy and dx:
+                    dist = math.hypot(dx, dy)
+                    dx, dy = dx / dist, dy / dist
+                    # move along this normalized vector towards the player at self.speed
+                    if self.rect.x > self.target[0]:
+                        self.rect.x += dx * - self.speed
+                        self.rect.y += dy * self.speed
+                        # rotate image to angle of trajectory
+                        degrees = math.degrees(math.atan2(dy,dx))
+                        self.image = pg.transform.rotate(self.image_orig, 360 - degrees)
+                        self.rect = self.image.get_rect(x=self.rect.x,y=self.rect.y)
+                    elif self.rect.x < self.target[0]:
+                        self.rect.x += dx * self.speed
+                        self.rect.y += dy * self.speed
+                        # rotate image to angle of trajectory
+                        degrees = math.degrees(math.atan2(dx, dy))
+                        self.image = pg.transform.rotate(self.image_orig, degrees)
+                        self.rect = self.image.get_rect(x=self.rect.x,y=self.rect.y)
+                    if self.rect.bottom >= self.target[1]:
+                        self.image = self.image_orig.copy() 
+                        self.returning = True
+                else:
+                    self.rect.y += self.speed
+                    if self.rect.bottom >= self.target[1]:
+                        self.returning = True
+            else:
+                self.rect.y -= self.speedy
+                if self.rect.y < 100:
+                    self.returning = False
+                    self.target = None      
+        elif self.shield < 25:
+            if self.rect.y > 100:
+               self.rect.y -= self.speedy
+            else:
+                self.side_to_side_movement()
+            self.bomb()
+            
 class Bullet(pg.sprite.Sprite):
     def __init__(self,x,y,enemy=False):    
         pg.sprite.Sprite.__init__(self)
@@ -911,97 +1066,138 @@ class Bullet(pg.sprite.Sprite):
             self.kill()
         self.counter += 1
 
-class LeftMissile(pg.sprite.Sprite):
-    def __init__(self, sprite):
+class Missile(pg.sprite.Sprite):
+    def __init__(self, player_rect, side):
+        """
+        side var is either "left" or "right", "left" means 
+        missile targets mobs on the left side of the line 
+        x = player.rect.centerx and vice versa
+        """
         pg.sprite.Sprite.__init__(self)
         self.image_orig = player_missile
+        self.side = side
         self.image = player_missile
         self.rect = self.image.get_rect()
-        self.rect.x = player.rect.left - 10
-        self.rect.y = player.rect.top
-        self.speed = -16
+        self.left_x = player_rect.centerx - int(player_rect.width/3)
+        self.right_x = player_rect.centerx + int(player_rect.width/3)
+        self.rect.centerx = self.left_x if self.side == "left" else self.right_x
+        self.rect.y = player_rect.top
+        self.speed = 16
         self.counter = 0
         self.target = None
-        self.parent = sprite
+        self.parent = player_rect
 
     def acquire_target(self):
-        for mob in mobs:
-            x_range = mob.rect.x < self.parent.rect.centerx
-            y_range = mob.rect.y <= (self.parent.rect.top - 300)
-            if x_range and y_range:
-                return mob
-        else:
-            return None
+        if self.side == "left":
+            for mob in mobs:
+                x_range = 0 < mob.rect.x < self.parent.centerx
+                y_range = height > mob.rect.y <= (self.parent.top - 300)
+                if x_range and y_range:
+                    return mob.rect
+            else:
+                return None
+        elif self.side == "right":
+            for mob in mobs:
+                x_range = width > mob.rect.x > self.parent.centerx
+                y_range = height > mob.rect.y <= (self.parent.top - 300)
+                if x_range and y_range:
+                    return mob.rect
+            else:
+                return None
 
     def update(self):
-        if self.counter == 0:
+        if not self.target:
             self.target = self.acquire_target()
         if self.target:
-            # find direction vector (dx, dy) between enemy and player
-            dx, dy = self.rect.x - self.target.rect.x, self.rect.y - self.target.rect.y
+            # find direction vector (dx, dy) between mob and player
+            if self.rect.x > self.target.x:
+                dx = self.rect.centerx - self.target.centerx
+                dy = self.rect.top - self.target.centery
+            elif self.rect.x < self.target.x:
+                dx = self.target.centerx - self.rect.centerx
+                dy = self.rect.top - self.target.centery
+            else:
+                dx = 0
+                #value of dy unimportant
+                dy = 0 
             if dy and dx:
                 dist = math.hypot(dx, dy)
-                dx, dy = dx / dist, dy / dist
-                # move along this normalized vector towards the player at self.speed
-                self.rect.x += dx * self.speed
-                self.rect.y += dy * self.speed
-                # rotate image to angle of trajectory
-                degrees = math.degrees(math.atan2(dy,dx))
-                self.image = pg.transform.rotate(self.image_orig, degrees)
-            else:
-                self.rect.y += self.speed
-                self.taget = None
+                dx = dx / dist
+                dy = dy / dist
+                #player to the right of mob
+                if self.rect.x > self.target.x:
+                    # move leftwards along normalized vector towards mob at self.speed
+                    self.rect.centerx += dx * - self.speed
+                    self.rect.top += dy * - self.speed
+                    # rotate image to angle of trajectory
+                    degrees = 90 - math.degrees(math.atan2(dy,dx))
+                    self.image = pg.transform.rotate(self.image_orig, degrees)
+                    self.rect = self.image.get_rect(x=self.rect.x,y=self.rect.y)
+                #player to the left of mob
+                elif self.rect.x < self.target.x:
+                    # move rightwards along normalized vector towards mob at self.speed
+                    self.rect.centerx += dx * self.speed
+                    self.rect.top += dy * - self.speed
+                    # rotate image to angle of trajectory
+                    degrees = math.degrees(math.atan2(dx, dy))
+                    self.image = pg.transform.rotate(self.image_orig, 360 - degrees)
+                    self.rect = self.image.get_rect(x=self.rect.x,y=self.rect.y)
         else:
             self.rect.y += self.speed
         if self.rect.bottom < 0:
             self.kill()
-        self.counter += 1
+        elif self.rect.left >= width:
+            self.kill()
+        elif self.rect.right <= 0:
+            self.kill()
 
-class RightMissile(pg.sprite.Sprite):
-    def __init__(self, sprite):
-        pg.sprite.Sprite.__init__(self)
-        self.image_orig = player_missile
-        self.image = player_missile
+class Bomb(pg.sprite.Sprite):
+    def __init__(self, bomber, target):
+        super().__init__()
+        self.image = bomb_img
         self.rect = self.image.get_rect()
-        self.rect.x = player.rect.right -55
-        self.rect.y = player.rect.top
-        self.speed = -16
-        self.counter = 0
-        self.target = None
-        self.parent = sprite
-
-    def acquire_target(self):
-        for mob in mobs:
-            x_range = mob.rect.x > self.parent.rect.centerx
-            y_range = mob.rect.y <= (self.parent.rect.top - 300)
-            if x_range and y_range: 
-                return mob
-        else:
-            return None
+        self.rect.y = bomber.rect.bottom
+        self.rect.x = bomber.rect.centerx
+        self.timer = 0 
+        self.speedy = 20
+        self.target = target
 
     def update(self):
-        if self.counter == 0:
-            self.target = self.acquire_target()
-        if self.target:
-            # find normalized direction vector (dx, dy) between enemy and player
-            dx, dy = self.target.rect.x - self.rect.x, self.rect.y - self.target.rect.y
-            if dy and dx:
-                dist = math.hypot(dx, dy)
-                dx, dy = dx / dist, dy / dist
-                # move along this normalized vector towards the player at current speed
-                self.rect.x += dx *  - self.speed
-                self.rect.y += dy * self.speed
-                # rotate image to angle of trajectory
-                degrees =  360 - math.degrees(math.atan2(dy,dx))
-                self.image = pg.transform.rotate(self.image_orig, degrees)
-            else:
-                self.rect.y += self.speed
-                self.taget = None
+        if self.rect.y < self.target.rect.y:
+            self.rect.y += self.speedy
         else:
-            self.rect.y += self.speed
-        if self.rect.bottom < 0:
+            self.timer += 1
+            if self.timer >= 30:
+                bomb_explosion = BombExplosion(self)
+                all_sprites.add(bomb_explosion)
+                explosions.add(bomb_explosion)
+                self.kill()
+
+class BombExplosion(pg.sprite.Sprite):
+    def __init__(self, bomb):
+        super().__init__()
+        self.image = redbomb_imgs[1]
+        self.image.set_colorkey(black)
+        self.rect = self.image.get_rect()
+        self.x = bomb.rect.centerx
+        self.y = bomb.rect.centery
+        self.rect.centerx = self.x
+        self.rect.centery = self.y
+        self.sequence = [i for i in range(1,18)] + [i for i in range(16,0,-1)]
+        self.counter = 0
+        self.last_update = pg.time.get_ticks()
+    
+    def update(self):
+        now = pg.time.get_ticks()
+        if now - self.last_update >= 50:
+            self.image = redbomb_imgs[self.sequence[self.counter]]
+            self.image.set_colorkey(black)
+            self.image.get_rect(centerx=self.x,
+                                centery=self.y)
+            self.counter += 1
+            self.last_update = now
+        if self.counter >= 32:
             self.kill()
-        self.counter += 1        
 
 class Powerup(pg.sprite.Sprite):
     def __init__(self, center):
@@ -1060,7 +1256,10 @@ while active:
     player = display_level_one_intro(pilot)
 
     #LEVEL_ONE
-    display_level_one(player)
+    player = display_level_one(player)
+
+    #LEVEL_ONE BOSS
+    display_level_one_boss(player)
  
 pg.quit()
 
