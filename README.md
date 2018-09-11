@@ -1,2 +1,3 @@
 # TFS in Space
-shoot em' up made with pygame
+shoot 'em up made with pygame
+in active development
