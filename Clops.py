@@ -377,6 +377,14 @@ def display_level_one_intro(pilot):
                 meteor.kill()
                 explosion = MeteorExplosion(meteor)
                 all_sprites.add(explosion)
+        #CHECKS WHETHER BULLET HITS METEOR SPRITE
+        hits = pg.sprite.groupcollide(meteors, bullets, True, True)
+        if hits:
+            for key in hits.keys():
+                explosion = MeteorExplosion(key)
+                all_sprites.add(explosion)
+                explosions.add(explosion)
+
         draw_text(screen, "LEVEL ONE", "PXFXshadow-3.ttf", 75, width/2, height/2)
         all_sprites.update()
         all_sprites.draw(screen)
@@ -410,8 +418,6 @@ def display_level_one(player):
                 pg.quit()
             if event.type == pg.KEYDOWN:
                 pass
-
-        collisions_checker()
 
         #CHECKS WHETHER BULLET HITS MOB SPRITE
         hits = pg.sprite.groupcollide(mobs, player_bullets, True, True, pg.sprite.collide_circle)
@@ -485,7 +491,27 @@ def display_level_one_boss(player):
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
-        collisions_checker()
+
+        #CHECKS WHETHER BOSS COLLIDES WITH PLAYER
+        hits = pg.sprite.spritecollide(player, mobs, False)
+        if hits:
+            player.shield -= 25
+            damage = PlayerDamageExplosion(hit)
+            all_sprites.add(damage)
+
+        #CHECKS WHETHER MOB BULLET HITS PLAYER
+        hits = pg.sprite.spritecollide(player, mob_bullets, True)
+        if hits:
+            player.shield -= 5
+        for hit in hits:
+            damage = PlayerDamageExplosion(hit)
+            all_sprites.add(damage)
+
+        #CHECKS WHETHER BOMB EXPLOSIONS HITS PLAYER
+        hits = pg.sprite.spritecollide(player, explosions, False)
+        if hits:
+            player.shield -= 3
+
         #BULLETS COLLIDING WITH BOSS
         hits = pg.sprite.spritecollide(boss, bullets, True)
         for hit in hits:
@@ -493,6 +519,20 @@ def display_level_one_boss(player):
                 boss.shield -= 3
             if type(hit) == Missile:
                 boss.shield -= 15
+
+        #PLAYER HEALTH CHECKER
+        if player.shield <= 0:
+            dead_sound.play()
+            player_explode = PlayerExplosion(player)
+            all_sprites.add(player_explode)
+            player.hide()
+            player.lives -= 1
+            player.shield = 100
+
+        #if player died and resulting explosion finished
+        if player.lives == 0:
+            if not player_explode.alive():
+                menu, level_one = display_game_over_screen()
 
         all_sprites.update()
         
@@ -937,7 +977,7 @@ class LevelOneBoss(pg.sprite.Sprite):
         self.returning = False
         self.last_shot  = pg.time.get_ticks()
         self.shoot_delay = 400
-        self.bomb_delay = 700
+        self.bomb_delay = 900
     
     def shoot(self):
         now = pg.time.get_ticks()
@@ -1024,7 +1064,7 @@ class LevelOneBoss(pg.sprite.Sprite):
                 if self.rect.y < 100:
                     self.returning = False
                     self.target = None      
-        elif self.shield < 25:
+        elif self.shield <= 25:
             if self.rect.y > 100:
                self.rect.y -= self.speedy
             else:
