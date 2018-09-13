@@ -234,6 +234,21 @@ def collisions_checker():
         player.powerup(hit)
 
 #GAME DISPLAYS
+
+def display_pause_screen():
+    draw_text(screen, "Paused", "NeuePixelSans.ttf", 90, width/2, height/2 - 200)
+    draw_text(screen, "Press Esc to Resume", "NeuePixelSans.ttf", 45, width/2, height/2 + 50)
+    pg.display.flip()
+    waiting = True
+    while waiting:
+        clock.tick(fps)
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+            if event.type == pg.KEYUP:
+                if event.key == K_ESCAPE:
+                    waiting = False
+
 def display_game_menu_screen():
     pilot = "Oscar"
     menu = True
@@ -548,8 +563,9 @@ def display_level_one(player):
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
-            if event.type == pg.KEYDOWN:
-                pass
+            if event.type == pg.KEYUP:
+                if event.key == K_ESCAPE:
+                    display_pause_screen()
 
         collisions_checker()
 
@@ -707,7 +723,9 @@ def display_level_one_boss(player):
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
-
+            if event.type == pg.KEYUP:
+                if event.key == K_ESCAPE:
+                    display_pause_screen()
         #CHECKS WHETHER BOSS COLLIDES WITH PLAYER
         hits = pg.sprite.spritecollide(player, mobs, False)
         if hits:
@@ -830,9 +848,6 @@ def display_level_one_boss(player):
             boss_defeated = display_win_screen()
 
 def display_win_screen():
-    """
-    displays game over screen and reinitialise on RETURN keyup event
-    """
     draw_text(screen, "That's it for now", "NeuePixelSans.ttf", 90, width/2, height/2 - 200)
     draw_text(screen, "More levels and better gameplay soon come", "NeuePixelSans.ttf", 45, width/2, height/2)
     draw_text(screen, "Press Esc to Return to Main Menu", "NeuePixelSans.ttf", 45, width/2, height/2 + 50)
