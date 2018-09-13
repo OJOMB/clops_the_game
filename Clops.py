@@ -52,6 +52,7 @@ for name in player_names:
     lives_width = int(player_imgs[name].get_rect().width * 0.2)
     lives_height = int(player_imgs[name].get_rect().height * 0.2)
     player_lives_imgs[name] = pg.transform.scale(player_imgs[name], (lives_width,lives_height))
+TFS_mothership_img = pg.image.load(os.path.join(img_dir, "allies", "TFSMothership.png")).convert_alpha()
 
 #enemy ships
 alien_scout = pg.image.load(os.path.join(img_dir, "enemies", "Alien-Scout.png")).convert_alpha()
@@ -80,6 +81,17 @@ warp_ss = pg.image.load(os.path.join(img_dir, "FX", "warp_effect.png")).convert_
 player_missile = pg.image.load(os.path.join(img_dir, "FX", "Human-Missile.png")).convert_alpha()
 bomb_img = pg.image.load(os.path.join(img_dir, "FX", "missile01.png")).convert_alpha()
 
+player_bullets = {}
+enemy_bullets = {}
+for i in range(1,4):
+    player_bullets[i] = pg.image.load(os.path.join(img_dir, "FX", 
+                               "Muzzle_flash_{}.png".format(i))).convert_alpha()
+for i in range(1,4):
+    enemy_bullets[i] = pg.image.load(os.path.join(img_dir, "FX", 
+                               "Muzzle_flash_{}_enemy.png".format(i))).convert_alpha()
+
+bullets_imgs = {"player":player_bullets, "enemy":enemy_bullets}
+
 #explosions
 l1_enemy_explosion = pg.image.load(os.path.join(img_dir, "explosions", "enemy_explosion.png")).convert_alpha()
 asteroid_explosion = {}
@@ -88,7 +100,7 @@ for size in ["small","medium","large"]:
     asteroid_explosion[size] = pg.image.load(os.path.join(img_dir, "explosions", "asteroid_explosion_{}.png".format(size))).convert_alpha()
     asteroid_explosion_ex[size] = pg.image.load(os.path.join(img_dir, "explosions", "asteroid_explosion_e_{}.png".format(size))).convert_alpha()
 asteroid_explosive_ss = {True:asteroid_explosion_ex, False:asteroid_explosion}
-player_damage = pg.image.load(os.path.join(img_dir, "player_explosion", "damage.png")).convert_alpha()
+player_damage = pg.image.load(os.path.join(img_dir, "player_explosion", "damage.png")).convert()
 player_explosion = {}
 for i in range(1,18):
     player_explosion[i] = pg.image.load(os.path.join(img_dir, "player_explosion", "{}.png".format(i))).convert()
@@ -108,6 +120,11 @@ keys = ["up", "down", "left", "right", "w", "a", "d", "space"]
 controls = {}
 for key in keys:
     controls[key] = pg.image.load(os.path.join(img_dir, "controls", "{}.png".format(key))).convert()
+
+#dialogue screens
+frame = pg.image.load(os.path.join(img_dir, "dialogue", "pokemon_frame.png")).convert()
+TFS_house_img = pg.image.load(os.path.join(img_dir, "dialogue", "TFS.png")).convert()
+clops_img = pg.image.load(os.path.join(img_dir, "dialogue", "clops_mini.png")).convert()
 
 #LOAD ALL GAME SOUNDS
 player_shoot_sound = pg.mixer.Sound(os.path.join(wav_dir, 'laser_shoot_23_player.wav'))
@@ -357,26 +374,142 @@ def display_contols_screen():
         pg.display.flip()
 
 def display_level_one_intro(pilot):
-    counter = 0
-    start_time = pg.time.get_ticks()
     intro = True
     warp = Warp()
     all_sprites.add(warp)
-    for i in range(20):
-        meteor = Meteor(5,2)
-        all_sprites.add(meteor)
-        meteors.add(meteor)
+    player = Player(pilot)
+    all_sprites.add(player)
+    tfs_mothership = TFSMothership()
+    all_sprites.add(tfs_mothership)
+    TFSship_enter = True
+    dialogue = False
+    TFSship_leaves = False
+    asteroids = False
+    meteor_shower = False
+    finished = False
     while intro:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
-        screen.fill(black)
-        screen.blit(stars,(0,0))
+        if tfs_mothership.rect.centerx < width/2 and TFSship_enter:
+            dialogue = True
+        while dialogue:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    pg.quit()
+            dialogue_one = True
+            while dialogue_one:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == pg.KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_one = False
+                            dialogue_two = True
+                all_sprites.update()
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(TFS_house_img, (60, height - 230 + 40))
+                draw_text(screen, "Clops stormed off a few days ago...", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
+                pg.display.flip()
+            while dialogue_two:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_two = False
+                            dialogue_three = True
+                all_sprites.update()
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(TFS_house_img, (60, height - 190))
+                draw_text(screen, "We think he's using drones to hijak a bunch of ", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
+                draw_text(screen, "spaceships in the Sheffield galactic quadrant...", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180 + 55, colour=black)
+                pg.display.flip()
+            while dialogue_three:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_three = False
+                            dialogue_four = True
+                all_sprites.update()
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(TFS_house_img, (60, height - 190))
+                draw_text(screen, "it's getting a bit out hand ", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
+                draw_text(screen, "we need you to get him to chill...", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180 + 55, colour=black)
+                pg.display.flip()
+            while dialogue_four:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_four = False
+                            dialogue_five = True
+                all_sprites.update()
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(TFS_house_img, (60, height - 190))
+                draw_text(screen, "destroy all his drone relay towers", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
+                draw_text(screen, "before space law gets involved...", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180 + 55, colour=black)
+                pg.display.flip()
+            while dialogue_five:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_five = False
+                            tfs_mothership.entering = False
+                            TFSship_enter = False
+                            dialogue = False
+                all_sprites.update()
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(TFS_house_img, (60, height - 190))
+                draw_text(screen, "Anyway, we got table sports to play.", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
+                draw_text(screen, "TFS mothership out", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180 + 55, colour=black)
+                pg.display.flip()
+
+        if not tfs_mothership.alive():
+            asteroids = True
+
+        if asteroids and not meteor_shower:
+            for i in range(20):
+                meteor = Meteor(5,2)
+                all_sprites.add(meteor)
+                meteors.add(meteor)
+            meteor_shower = True
+
         for meteor in meteors:
             if meteor.rect.y > height/2 -200:
                 meteor.kill()
                 explosion = MeteorExplosion(meteor)
                 all_sprites.add(explosion)
+
         #CHECKS WHETHER BULLET HITS METEOR SPRITE
         hits = pg.sprite.groupcollide(meteors, bullets, True, True)
         if hits:
@@ -385,16 +518,15 @@ def display_level_one_intro(pilot):
                 all_sprites.add(explosion)
                 explosions.add(explosion)
 
-        draw_text(screen, "LEVEL ONE", "PXFXshadow-3.ttf", 75, width/2, height/2)
+        screen.fill(black)
+        screen.blit(stars,(0,0))
+        if meteor_shower:
+            draw_text(screen, "LEVEL ONE", "PXFXshadow-3.ttf", 75, width/2, height/2)
         all_sprites.update()
         all_sprites.draw(screen)
         pg.display.flip()
-        if counter == 4:
-            player = Player(pilot)
-            all_sprites.add(player)
-        if pg.time.get_ticks() - start_time >= 7050:
+        if meteor_shower and not meteors:
             return player
-        counter += 1 
 
 def display_level_one(player):
     re_init = False
@@ -454,7 +586,7 @@ def display_level_one(player):
 
         #DRAW PART OF GAMELOOP
         screen.fill(black)
-        if pg.time.get_ticks() - nebulae_timer > 15000:
+        if pg.time.get_ticks() - nebulae_timer > 16000:
             nebula = Nebula()
             all_sprites.add(nebula)
             nebulae_timer = pg.time.get_ticks()
@@ -479,16 +611,98 @@ def display_level_one(player):
                 menu, level_one = display_game_over_screen()
 
         #if player achieves 1000 score points summon boss
-        if player.score >= 10:
+        if player.score >= 1000:
             return player 
 
 def display_level_one_boss(player):
     for mob in mobs:
         mob.kill()
+    for meteor in meteors:
+        meteor.kill()
     boss = LevelOneBoss()
     mobs.add(boss)
     all_sprites.add(boss)
-    boss_active = True
+    boss_active = False
+    boss_dialogue = True
+    dialogue_one = True
+    while boss_dialogue:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+        if boss.rect.y > 100:
+            while dialogue_one:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == pg.KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_one = False
+                            dialogue_two = True
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(clops_img, (60, height - 230 + 40))
+                draw_text(screen, "I was going to make cauliflower cheese...", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
+                pg.display.flip()
+            while dialogue_two:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_two = False
+                            dialogue_three = True
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(clops_img, (60, height - 190))
+                draw_text(screen, "...", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
+                pg.display.flip()
+            while dialogue_three:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_three = False
+                            dialogue_four = True
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(clops_img, (60, height - 190))
+                draw_text(screen, "but YOU stole my cheddar from the fridge.", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
+                draw_text(screen, "You went too far!", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180 + 55, colour=black)
+                pg.display.flip()
+            while dialogue_four:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_four = False
+                            boss_dialogue = False
+                            boss_active = True
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(clops_img, (60, height - 190))
+                draw_text(screen, "NOTHING WILL STILL MY RAGE", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
+                pg.display.flip()
+        all_sprites.update()
+        screen.fill(black)
+        screen.blit(stars,(0,0))
+        all_sprites.draw(screen)
+        pg.display.flip()
+
     while boss_active:
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -510,7 +724,7 @@ def display_level_one_boss(player):
             all_sprites.add(damage)
 
         #CHECKS WHETHER BOMB EXPLOSIONS HITS PLAYER
-        hits = pg.sprite.spritecollide(player, explosions, False)
+        hits = pg.sprite.spritecollide(player, explosions, False, pg.sprite.collide_circle)
         if hits:
             player.shield -= 3
 
@@ -536,15 +750,104 @@ def display_level_one_boss(player):
             if not player_explode.alive():
                 menu, level_one = display_game_over_screen()
 
+        if boss.shield <= 0:
+            boss_active = False
+            boss_defeated = True
+            dialogue = True
+
         all_sprites.update()
         
         screen.fill(black)
         screen.blit(stars,(0,0))
-        pg.draw.rect(screen, white, boss.rect, 4)
         draw_all_normal_game_stats()
         draw_shield_bar(screen, boss.rect.centerx, boss.rect.centery + 125, boss.shield)
+        for explosion in explosions:
+            pg.draw.circle(screen, red, explosion.rect.center, int(explosion.radius), 2)
         all_sprites.draw(screen)
         pg.display.flip()
+
+    while boss_defeated:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+        while dialogue:
+            dialogue_one = True
+            while dialogue_one:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == pg.KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_one = False
+                            dialogue_two = True
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(clops_img, (60, height - 230 + 40))
+                draw_text(screen, "...", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)                 
+                pg.display.flip()
+            while dialogue_two:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == pg.KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_two = False
+                            dialogue_three = True
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(clops_img, (60, height - 230 + 40))
+                draw_text(screen, "*space rage intensifies*", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)                        
+                pg.display.flip()
+            while dialogue_three:
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        pg.quit()
+                    if event.type == KEYUP:
+                        if event.key == K_RETURN:
+                            dialogue_three = False
+                            dialogue = False
+                            boss.flee = True
+                screen.fill(black)
+                screen.blit(stars,(0,0))
+                all_sprites.draw(screen)
+                screen.blit(frame, (0,height - 230))
+                screen.blit(clops_img, (60, height - 190))
+                draw_text(screen, "AHHHHHHHHHH", 
+                        "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
+                pg.display.flip()
+        all_sprites.update()
+        screen.fill(black)
+        screen.blit(stars,(0,0))
+        all_sprites.draw(screen)
+        pg.display.flip()
+        if not boss.alive():
+            boss_defeated = display_win_screen()
+
+def display_win_screen():
+    """
+    displays game over screen and reinitialise on RETURN keyup event
+    """
+    draw_text(screen, "That's it for now", "NeuePixelSans.ttf", 90, width/2, height/2 - 200)
+    draw_text(screen, "More levels and better gameplay soon come", "NeuePixelSans.ttf", 45, width/2, height/2)
+    draw_text(screen, "Press Esc to Return to Main Menu", "NeuePixelSans.ttf", 45, width/2, height/2 + 50)
+    pg.display.flip()
+    waiting = True
+    while waiting:
+        clock.tick(fps)
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+            if event.type == pg.KEYUP:
+                if event.key == K_ESCAPE:
+                    for group in all_groups:
+                        group.empty()
+                    return False
 
 #CLASSES
 
@@ -708,6 +1011,25 @@ class Rotator(pg.sprite.Sprite):
     def update(self):
         self.rotate()
 
+class TFSMothership(pg.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = TFS_mothership_img
+        self.rect = self.image.get_rect()
+        self.rect.y = 100
+        self.rect.left = width
+        self.entering = True
+        self.speedx = 5
+
+    def update(self):
+        if self.entering:
+            if self.rect.centerx > width/2:
+                self.rect.x -= self.speedx
+        else:
+            self.rect.x -= self.speedx
+        if self.rect.right < 0:
+            self.kill()
+
 class Meteor(pg.sprite.Sprite):
     def __init__(self, cols, rows, fast=False):
         pg.sprite.Sprite.__init__(self)
@@ -863,17 +1185,18 @@ class PlayerDamageExplosion(pg.sprite.Sprite):
         self.player = player
         self.ssheet = player_damage
         self.cols = 8
-        self.rows = 8
+        self.rows = 7
         self.total_cell_count = self.cols * self.rows
         self.ssheet_rect = self.ssheet.get_rect()
         w = self.cell_width = self.ssheet_rect.width / self.cols
         h =self.cell_height = self.ssheet_rect.height / self.rows
         hw, hh = self.cell_centre = (self.cell_width/2, self.cell_height/2)
         self.cells = [(i%self.cols*w, i//self.cols*h, w, h) for i in range(self.total_cell_count)]
-        self.selection = [i for i in range(64)]
+        self.selection = [i for i in range(56)]
         self.surf = pg.Surface((self.cell_width, self.cell_height))
         self.surf.blit(self.ssheet, (self.ssheet_rect.x , self.ssheet_rect.y), self.cells[self.selection[0]])
         self.image = self.surf
+        self.image.set_colorkey(black)
         self.dist = hit.rect.centerx - player.rect.centerx
         self.rect = self.image.get_rect()
         self.rect.centerx = player.rect.centerx + self.dist
@@ -882,22 +1205,19 @@ class PlayerDamageExplosion(pg.sprite.Sprite):
         self.last_update = pg.time.get_ticks()
 
     def update(self):
-        now = pg.time.get_ticks()
-        time_diff = now - self.last_update
-        if time_diff >= 0:
-            self.surf.fill(black)
-            self.surf.blit(self.ssheet, (self.ssheet_rect.x , self.ssheet_rect.y), self.cells[self.selection[self.counter]])
-            self.image = self.surf
-            self.image.set_colorkey(black)
-            self.rect = self.image.get_rect()
-            self.rect.centerx = self.player.rect.centerx + self.dist
-            self.rect.centery = self.player.rect.top
-            if (self.counter == 63):
-                self.counter = 0
-                self.kill()
-            else:
-                self.counter += 1
-            self.last_update = pg.time.get_ticks() 
+        self.surf.fill(black)
+        self.surf.blit(self.ssheet, (self.ssheet_rect.x , self.ssheet_rect.y), self.cells[self.selection[self.counter]])
+        self.image = self.surf
+        self.image.set_colorkey(black)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = self.player.rect.centerx + self.dist
+        self.rect.centery = self.player.rect.top
+        if (self.counter == 55):
+            self.counter = 0
+            self.kill()
+        else:
+            self.counter += 1
+        self.last_update = pg.time.get_ticks() 
 
 class Warp(pg.sprite.Sprite):
     def __init__(self):
@@ -980,10 +1300,11 @@ class LevelOneBoss(pg.sprite.Sprite):
         self.speedy = 4
         self.direction = "left"
         self.target = None
-        self.returning = False
+        self.retreating = False
         self.last_shot  = pg.time.get_ticks()
         self.shoot_delay = 400
-        self.bomb_delay = 900
+        self.bomb_delay = 1500
+        self.flee = False
     
     def shoot(self):
         now = pg.time.get_ticks()
@@ -1016,73 +1337,78 @@ class LevelOneBoss(pg.sprite.Sprite):
             all_sprites.add(bomba)
 
     def update(self):
-        if self.shield > 50:
-            if self.rect.y < 100:
-                self.rect.y += self.speedy
-            else:
-                self.side_to_side_movement()
-            self.shoot()
-        elif 25 < self.shield <= 50:
-            self.speedy = 15
-            if not self.target:
-                self.target = (player.rect.centerx, player.rect.bottom)
-                print("target acquired: ({},{})".format(self.target[0],self.target[1]))
-            #self.returning true when boss is retreating from attempted ram
-            if not self.returning:
-                # find direction vector (dx, dy) between enemy and player
-                if self.rect.x > self.target[0]:
-                    dx = self.rect.x - self.target[0]
-                    dy = self.target[1] - self.rect.y
-                elif self.rect.x < self.target[0]:
-                    dx = self.target[0] - self.rect.x
-                    dy = self.target[1] - self.rect.y
-                else:
-                    dx = 0
-                    #value of dy unimportant
-                    dy = 0 
-                if dy and dx:
-                    dist = math.hypot(dx, dy)
-                    dx, dy = dx / dist, dy / dist
-                    # move along this normalized vector towards the player at self.speed
-                    if self.rect.x > self.target[0]:
-                        self.rect.x += dx * - self.speed
-                        self.rect.y += dy * self.speed
-                        # rotate image to angle of trajectory
-                        degrees = math.degrees(math.atan2(dy,dx))
-                        self.image = pg.transform.rotate(self.image_orig, 360 - degrees)
-                        self.rect = self.image.get_rect(x=self.rect.x,y=self.rect.y)
-                    elif self.rect.x < self.target[0]:
-                        self.rect.x += dx * self.speed
-                        self.rect.y += dy * self.speed
-                        # rotate image to angle of trajectory
-                        degrees = math.degrees(math.atan2(dx, dy))
-                        self.image = pg.transform.rotate(self.image_orig, degrees)
-                        self.rect = self.image.get_rect(x=self.rect.x,y=self.rect.y)
-                    if self.rect.bottom >= self.target[1]:
-                        self.image = self.image_orig.copy() 
-                        self.returning = True
-                else:
-                    self.rect.y += self.speed
-                    if self.rect.bottom >= self.target[1]:
-                        self.returning = True
-            else:
-                self.rect.y -= self.speedy
+        if not self.flee:
+            if self.shield > 50:
                 if self.rect.y < 100:
-                    self.returning = False
-                    self.target = None      
-        elif self.shield <= 25:
-            if self.rect.y > 100:
-               self.rect.y -= self.speedy
-            else:
-                self.side_to_side_movement()
-            self.bomb()
+                    self.rect.y += self.speedy
+                else:
+                    self.side_to_side_movement()
+                    self.shoot()
+            elif 25 < self.shield <= 50:
+                self.speedy = 15
+                #self.retreating true when boss is retreating from attempted ram
+                if not self.retreating:
+                    if not self.target:
+                        #if (-100 < player.rect.x < width + 100) and (0 > player.rect.y < height):
+                        self.target = (player.rect.centerx, player.rect.bottom)
+                    if self.target:
+                    # find direction vector (dx, dy) between enemy and player
+                        if self.rect.x > self.target[0]:
+                            dx = self.rect.x - self.target[0]
+                            dy = self.target[1] - self.rect.y
+                        elif self.rect.x < self.target[0]:
+                            dx = self.target[0] - self.rect.x
+                            dy = self.target[1] - self.rect.y
+                        else:
+                            dx = 0
+                            #value of dy unimportant
+                            dy = 0 
+                        if dy and dx:
+                            dist = math.hypot(dx, dy)
+                            dx, dy = dx / dist, dy / dist
+                            # move along this normalized vector towards the player at self.speed
+                            if self.rect.x > self.target[0]:
+                                self.rect.x += dx * - self.speed
+                                self.rect.y += dy * self.speed
+                                # rotate image to angle of trajectory
+                                degrees = math.degrees(math.atan2(dy,dx))
+                                self.image = pg.transform.rotate(self.image_orig, 360 - degrees)
+                                self.rect = self.image.get_rect(x=self.rect.x,y=self.rect.y)
+                            elif self.rect.x < self.target[0]:
+                                self.rect.x += dx * self.speed
+                                self.rect.y += dy * self.speed
+                                # rotate image to angle of trajectory
+                                degrees = math.degrees(math.atan2(dx, dy))
+                                self.image = pg.transform.rotate(self.image_orig, degrees)
+                                self.rect = self.image.get_rect(x=self.rect.x,y=self.rect.y)
+                            if self.rect.bottom >= self.target[1]:
+                                self.image = self.image_orig.copy() 
+                                self.retreating = True
+                        else:
+                            self.rect.y += self.speed
+                            if self.rect.bottom >= self.target[1]:
+                                self.retreating = True
+                else:
+                    self.rect.y -= self.speedy
+                    if self.rect.y < 100:
+                        self.retreating = False
+                        self.target = None      
+            elif self.shield <= 25:
+                if self.rect.y > 100:
+                    self.rect.y -= self.speedy
+                else:
+                    self.side_to_side_movement()
+                self.bomb()
+        else:
+            self.rect.y -= 5
+            if self.rect.bottom < -20:
+                self.kill()
             
 class Bullet(pg.sprite.Sprite):
     def __init__(self,x,y,enemy=False):    
         pg.sprite.Sprite.__init__(self)
-        self.enemy = "_enemy" if enemy else ""
-        self.image = pg.image.load(os.path.join(img_dir, "FX",
-                                       "muzzle_flash_1{}.png".format(self.enemy))).convert_alpha()
+        self.enemy = "enemy" if enemy else "player"
+        self.image = bullets_imgs[self.enemy][1]
         self.rect = self.image.get_rect()
         self.radius = 12
         self.rect.bottom = y
@@ -1095,7 +1421,7 @@ class Bullet(pg.sprite.Sprite):
         if self.counter == 8:
             x = self.rect.x
             y = self.rect.y
-            self.image = pg.image.load(os.path.join(img_dir, "FX", "muzzle_flash_2{}.png".format(self.enemy))).convert_alpha()
+            self.image = bullets_imgs[self.enemy][2]
             self.rect = self.image.get_rect()
             self.radius = 10
             self.rect.x = x
@@ -1103,7 +1429,7 @@ class Bullet(pg.sprite.Sprite):
         if self.counter == 15:
             x = self.rect.x
             y = self.rect.y
-            self.image = pg.image.load(os.path.join(img_dir, "FX", "muzzle_flash_3{}.png".format(self.enemy))).convert_alpha()
+            self.image = bullets_imgs[self.enemy][3]
             self.rect = self.image.get_rect()
             self.radius = 10
             self.rect.x = x
@@ -1189,7 +1515,7 @@ class Missile(pg.sprite.Sprite):
                     self.image = pg.transform.rotate(self.image_orig, 360 - degrees)
                     self.rect = self.image.get_rect(x=self.rect.x,y=self.rect.y)
         else:
-            self.rect.y += self.speed
+            self.rect.y -= self.speed
         if self.rect.bottom < 0:
             self.kill()
         elif self.rect.left >= width:
@@ -1229,6 +1555,8 @@ class BombExplosion(pg.sprite.Sprite):
         self.y = bomb.rect.centery
         self.rect.centerx = self.x
         self.rect.centery = self.y
+        self.radius = int(self.rect.width / 2)
+        pg.draw.circle(screen, red, self.rect.center, self.radius)
         self.sequence = [i for i in range(1,18)] + [i for i in range(16,0,-1)]
         self.counter = 0
         self.last_update = pg.time.get_ticks()
@@ -1240,6 +1568,7 @@ class BombExplosion(pg.sprite.Sprite):
             self.image.set_colorkey(black)
             self.image.get_rect(centerx=self.x,
                                 centery=self.y)
+            self.radius = int(self.rect.width / 2)
             self.counter += 1
             self.last_update = now
         if self.counter >= 32:
@@ -1262,7 +1591,7 @@ class Powerup(pg.sprite.Sprite):
 class Nebula(pg.sprite.Sprite):
     def __init__(self):
         pg.sprite.Sprite.__init__(self)
-        self.image = nebulae[random.choice([i for i in range(1,len(nebulae)+1)])]
+        self.image = nebulae[random.choice([1,2,3])]
         self.rect = self.image.get_rect()
         self.rect.x = random.randrange(0, width)
         self.rect.bottom = -20
@@ -1293,18 +1622,26 @@ active = True
 
 while active:
     #GAME MENU
+    pg.mixer.music.load(os.path.join(wav_dir, "Dr. Dre - The Message (Instrumental).ogg"))
+    pg.mixer.music.set_volume(0.3)
+    pg.mixer.music.play(loops=-1)
     pilot = display_game_menu_screen()
 
-    #Play background music
-    pg.mixer.music.play(loops=-1)
-
     #LEVEL_ONE INTRO
+    pg.mixer.music.stop()
     player = display_level_one_intro(pilot)
+    
 
     #LEVEL_ONE
+    pg.mixer.music.load(os.path.join(wav_dir, "stellar_awakening.ogg"))
+    pg.mixer.music.set_volume(0.3)
+    pg.mixer.music.play(loops=-1)
     player = display_level_one(player)
 
     #LEVEL_ONE BOSS
+    pg.mixer.music.load(os.path.join(wav_dir, "993.ogg"))
+    pg.mixer.music.set_volume(0.3)
+    pg.mixer.music.play(loops=-1)
     display_level_one_boss(player)
  
 pg.quit()
