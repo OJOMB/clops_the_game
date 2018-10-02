@@ -403,17 +403,20 @@ def display_level_one_intro(pilot):
     meteor_shower = False
     finished = False
     while intro:
+        clock.tick(fps)
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
         if tfs_mothership.rect.centerx < width/2 and TFSship_enter:
             dialogue = True
         while dialogue:
+            clock.tick(fps)
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     pg.quit()
             dialogue_one = True
             while dialogue_one:
+                clock.tick(fps)
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         pg.quit()
@@ -431,6 +434,7 @@ def display_level_one_intro(pilot):
                         "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
                 pg.display.flip()
             while dialogue_two:
+                clock.tick(fps)
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         pg.quit()
@@ -450,6 +454,7 @@ def display_level_one_intro(pilot):
                         "PXFXshadow-3.ttf", 30, width/2, height - 180 + 55, colour=black)
                 pg.display.flip()
             while dialogue_three:
+                clock.tick(fps)
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         pg.quit()
@@ -469,6 +474,7 @@ def display_level_one_intro(pilot):
                         "PXFXshadow-3.ttf", 30, width/2, height - 180 + 55, colour=black)
                 pg.display.flip()
             while dialogue_four:
+                clock.tick(fps)
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         pg.quit()
@@ -488,6 +494,7 @@ def display_level_one_intro(pilot):
                         "PXFXshadow-3.ttf", 30, width/2, height - 180 + 55, colour=black)
                 pg.display.flip()
             while dialogue_five:
+                clock.tick(fps)
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         pg.quit()
@@ -642,11 +649,13 @@ def display_level_one_boss(player):
     boss_dialogue = True
     dialogue_one = True
     while boss_dialogue:
+        clock.tick(fps)
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
         if boss.rect.y > 100:
             while dialogue_one:
+                clock.tick(fps)
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         pg.quit()
@@ -663,6 +672,7 @@ def display_level_one_boss(player):
                         "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
                 pg.display.flip()
             while dialogue_two:
+                clock.tick(fps)
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         pg.quit()
@@ -679,6 +689,7 @@ def display_level_one_boss(player):
                         "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)
                 pg.display.flip()
             while dialogue_three:
+                clock.tick(fps)
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         pg.quit()
@@ -697,6 +708,7 @@ def display_level_one_boss(player):
                         "PXFXshadow-3.ttf", 30, width/2, height - 180 + 55, colour=black)
                 pg.display.flip()
             while dialogue_four:
+                clock.tick(fps)
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         pg.quit()
@@ -720,6 +732,7 @@ def display_level_one_boss(player):
         pg.display.flip()
 
     while boss_active:
+        clock.tick(fps)
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
@@ -785,10 +798,12 @@ def display_level_one_boss(player):
         pg.display.flip()
 
     while boss_defeated:
+        clock.tick(fps)
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
         while dialogue:
+            clock.tick(fps)
             dialogue_one = True
             while dialogue_one:
                 for event in pg.event.get():
@@ -807,6 +822,7 @@ def display_level_one_boss(player):
                         "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)                 
                 pg.display.flip()
             while dialogue_two:
+                clock.tick(fps)
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         pg.quit()
@@ -823,6 +839,7 @@ def display_level_one_boss(player):
                         "PXFXshadow-3.ttf", 30, width/2, height - 180, colour=black)                        
                 pg.display.flip()
             while dialogue_three:
+                clock.tick(fps)
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         pg.quit()
